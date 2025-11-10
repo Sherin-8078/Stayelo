@@ -1,0 +1,232 @@
+import React, { useState, useEffect } from "react";
+import { FaHotel } from "react-icons/fa6";
+import { TiThMenu } from "react-icons/ti";
+import { Button } from "./ui/Button";
+import ResponsiveMenu from "./ResponsiveMenu";
+import Login from "./Login";
+import Profile from "./Profile";
+import { useNavigate, useLocation, NavLink } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
+
+const Navbar = () => {
+  const [open, setOpen] = useState(false);
+  const [openLogin, setOpenLogin] = useState(false);
+  const [user, setUser] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const [theme, setTheme] = useState(
+    localStorage.theme ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light")
+  );
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) setUser(JSON.parse(savedUser));
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
+    navigate("/");
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    if (userData.role === "ADMIN") navigate("/adminDashboard");
+    else navigate("/");
+
+    setTimeout(() => setOpenLogin(false), 100);
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.theme = theme;
+  }, [theme]);
+
+  const textColor =
+    scrolled || location.pathname !== "/"
+      ? "text-gray-900 dark:text-white"
+      : "text-white";
+
+  const links = [
+    { name: "Home", path: "/" },
+    { name: "Rooms", path: "/rooms" },
+    { name: "My Bookings", path: "/my-bookings", role: "CUSTOMER" },
+    { name: "About Us", path: "/aboutus" },
+    { name: "Contact", path: "/contact" },
+  ];
+
+  return (
+    <>
+      <nav
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+          scrolled || location.pathname !== "/"
+            ? "bg-white/50 dark:bg-gray-800/70 backdrop-blur-md shadow-md"
+            : "bg-transparent"
+        }`}
+      >
+        <div className="flex justify-between items-center py-5 px-6 md:px-12">
+
+          {/* LOGO */}
+          <div
+            onClick={() => navigate("/")}
+            className={`flex items-center gap-4 font-bold text-2xl cursor-pointer ${textColor}`}
+          >
+            <FaHotel size={30} />
+            <div className="flex flex-row text-4xl">
+              <p className={textColor}>Stay</p>
+              <p className="text-cyan-300 dark:text-fuchsia-400">elo</p>
+            </div>
+          </div>
+
+          {/* DESKTOP LINKS */}
+          <div className="hidden md:block">
+            {user?.role === "ADMIN" ? (
+              <ul className="flex items-center gap-6 font-semibold">
+                <li>
+                  <NavLink
+                    to="/adminDashboard"
+                    className={({ isActive }) =>
+                      `py-1 px-3 transition ${
+                        isActive
+                          ? "text-cyan-500 dark:text-fuchsia-400"
+                          : `${textColor} hover:text-cyan-400 dark:hover:text-fuchsia-400`
+                      }`
+                    }
+                  >
+                    Dashboard
+                  </NavLink>
+                </li>
+              </ul>
+            ) : (
+              <ul className="flex items-center gap-6 font-semibold">
+                {links.map((link) => {
+                  if (link.role && user?.role !== link.role) return null;
+                  return (
+                    <li key={link.name}>
+                      <NavLink
+                        to={link.path}
+                        className={({ isActive }) =>
+                          `py-1 px-3 transition ${
+                            isActive
+                              ? "text-cyan-500 dark:text-fuchsia-400"
+                              : `${textColor} hover:text-cyan-400 dark:hover:text-fuchsia-400`
+                          }`
+                        }
+                      >
+                        {link.name}
+                      </NavLink>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          {/* RIGHT SIDE BUTTONS */}
+          <div className="flex items-center gap-5">
+            {/* THEME TOGGLE */}
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-cyan-500 hover:text-white transition-all duration-300 dark:hover:bg-fuchsia-500"
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {/* PROFILE / LOGIN */}
+            {user ? (
+              <>
+                {user.role === "CUSTOMER" && (
+                  <>
+                    <span className={`font-semibold ${textColor}`}>
+                      Hello, {user.name}
+                    </span>
+                    <div
+                      className="relative ml-3 cursor-pointer"
+                      onClick={() => setProfileOpen(true)}
+                    >
+                      <img
+                        alt="profile"
+                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                        className="h-9 w-9 rounded-full border-2 border-cyan-500 dark:border-fuchsia-400 hover:scale-105 transition-transform"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {user.role === "ADMIN" && (
+                  <>
+                    <span className="text-gray-900 dark:text-fuchsia-200 font-semibold">
+                      Hello, Admin
+                    </span>
+                    <Button
+                      onClick={handleLogout}
+                      className="bg-red-500 text-white hover:bg-red-600"
+                    >
+                      Logout
+                    </Button>
+                  </>
+                )}
+              </>
+            ) : (
+              <Button
+                variant="default"
+                className="rounded-full cursor-pointer text-lg font-bold dark:bg-fuchsia-600 dark:hover:bg-fuchsia-700"
+                onClick={() => setOpenLogin(true)}
+              >
+                Log in
+              </Button>
+            )}
+
+            {/* MOBILE MENU ICON */}
+            <div className="md:hidden" onClick={() => setOpen(!open)}>
+              <TiThMenu
+                className={`text-4xl cursor-pointer ${
+                  scrolled || location.pathname !== "/"
+                    ? "text-gray-900 dark:text-white"
+                    : "text-white"
+                }`}
+              />
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* MOBILE MENU */}
+      <ResponsiveMenu
+        open={open}
+        user={user}
+        onLogout={handleLogout}
+        onLogin={handleLoginSuccess}
+        closeMenu={() => setOpen(false)}
+      />
+
+      {/* LOGIN POPUP */}
+      <Login
+        open={openLogin}
+        onClose={() => setOpenLogin(false)}
+        onLogin={handleLoginSuccess}
+      />
+
+      {/* PROFILE POPUP */}
+      <Profile open={profileOpen} onClose={() => setProfileOpen(false)} />
+    </>
+  );
+};
+
+export default Navbar;
