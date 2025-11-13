@@ -6,38 +6,75 @@ const RoomOccupancyBar = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [occupancyData, setOccupancyData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  // ✅ Fetch occupancy data from backend
   useEffect(() => {
     const fetchOccupancy = async () => {
       try {
         setLoading(true);
+        setErrorMsg("");
+
         const token = localStorage.getItem("token");
+
+        if (!token) {
+          console.warn("No admin token found in localStorage!");
+          setErrorMsg("Admin token missing. Please login as admin.");
+          setLoading(false);
+          return;
+        }
+
+        console.log("Fetching rooms from backend with token...", token);
+
+        // Fetch all rooms (admin route)
         const res = await axios.get("http://localhost:4000/api/rooms", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Calculate occupancy per type
+        console.log("Raw response: ", res);
         const rooms = res.data || [];
+        console.log("Rooms data received: ", rooms);
+
+        if (!rooms.length) {
+          setOccupancyData([]);
+          return;
+        }
+
+        // Group by room type and calculate occupancy
         const grouped = rooms.reduce((acc, room) => {
+          console.log("Processing room: ", room);
           const type = room.type || "Unknown";
-          if (!acc[type]) acc[type] = { total: 0, available: 0 };
-          acc[type].total += 1;
-          if (room.available) acc[type].available += 1;
+          const capacity = room.capacity || 1;
+          const isOccupied = !room.available;
+
+          if (!acc[type]) acc[type] = { total: 0, occupied: 0 };
+
+          acc[type].total += capacity;
+          if (isOccupied) acc[type].occupied += capacity;
+
+          console.log(`Grouped stats for ${type}: `, acc[type]);
           return acc;
         }, {});
 
+        // Convert to array for rendering
         const formatted = Object.entries(grouped).map(([type, stats]) => {
-          const occupiedRate =
-            stats.total > 0
-              ? Math.round(((stats.total - stats.available) / stats.total) * 100)
-              : 0;
-          return { type, rate: occupiedRate };
+          const rate =
+            stats.total > 0 ? Math.round((stats.occupied / stats.total) * 100) : 0;
+          console.log(`Formatted ${type}: ${rate}% occupied`);
+          return { type, rate };
         });
 
+        console.log("Final occupancy data: ", formatted);
         setOccupancyData(formatted);
       } catch (err) {
-        console.error("Error fetching occupancy data:", err.response?.data || err.message);
+        console.error(
+          "Error fetching occupancy data:",
+          err.response?.data || err.message
+        );
+        if (err.response?.status === 401) {
+          setErrorMsg("Unauthorized. Admin token is invalid or expired.");
+        } else {
+          setErrorMsg("Failed to fetch occupancy data. Check console for details.");
+        }
       } finally {
         setLoading(false);
       }
@@ -54,7 +91,6 @@ const RoomOccupancyBar = () => {
           : "bg-white border border-gray-200 text-gray-800"
       }`}
     >
-      {/* Header with toggle */}
       <div className="flex justify-between items-center mb-4">
         <h3
           className={`font-semibold text-lg ${
@@ -73,12 +109,13 @@ const RoomOccupancyBar = () => {
         </button>
       </div>
 
-      {/* Loading Spinner */}
       {loading ? (
         <div className="flex justify-center items-center py-8 text-gray-400">
           <Loader2 className="animate-spin mr-2" size={18} />
           Loading occupancy data...
         </div>
+      ) : errorMsg ? (
+        <p className="text-center text-red-500 py-4">{errorMsg}</p>
       ) : occupancyData.length === 0 ? (
         <p className="text-center text-gray-500 py-4">
           No occupancy data available.

@@ -25,17 +25,20 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Scroll detection for navbar background
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Load user from local storage
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
+  // Logout handler
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -43,6 +46,7 @@ const Navbar = () => {
     navigate("/");
   };
 
+  // Handle login success
   const handleLoginSuccess = (userData) => {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
@@ -53,6 +57,7 @@ const Navbar = () => {
     setTimeout(() => setOpenLogin(false), 100);
   };
 
+  // Update theme
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.theme = theme;
@@ -71,17 +76,22 @@ const Navbar = () => {
     { name: "Contact", path: "/contact" },
   ];
 
+  // Default/fallback profile picture
+  const profilePicSrc =
+    user?.profilePic ||
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
+
   return (
     <>
+      {/* NAVBAR */}
       <nav
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
           scrolled || location.pathname !== "/"
-            ? "bg-white/50 dark:bg-gray-800/70 backdrop-blur-md shadow-md"
+            ? "bg-white/60 dark:bg-gray-900/70 backdrop-blur-md shadow-md"
             : "bg-transparent"
         }`}
       >
         <div className="flex justify-between items-center py-5 px-6 md:px-12">
-
           {/* LOGO */}
           <div
             onClick={() => navigate("/")}
@@ -138,7 +148,7 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* RIGHT SIDE BUTTONS */}
+          {/* RIGHT SIDE CONTROLS */}
           <div className="flex items-center gap-5">
             {/* THEME TOGGLE */}
             <button
@@ -153,7 +163,9 @@ const Navbar = () => {
               <>
                 {user.role === "CUSTOMER" && (
                   <>
-                    <span className={`font-semibold ${textColor}`}>
+                    <span
+                      className={`font-semibold ${textColor} md:block hidden`}
+                    >
                       Hello, {user.name}
                     </span>
                     <div
@@ -162,7 +174,7 @@ const Navbar = () => {
                     >
                       <img
                         alt="profile"
-                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                        src={profilePicSrc}
                         className="h-9 w-9 rounded-full border-2 border-cyan-500 dark:border-fuchsia-400 hover:scale-105 transition-transform"
                       />
                     </div>
@@ -171,7 +183,7 @@ const Navbar = () => {
 
                 {user.role === "ADMIN" && (
                   <>
-                    <span className="text-gray-900 dark:text-fuchsia-200 font-semibold">
+                    <span className="text-gray-900 dark:text-fuchsia-200 font-semibold md:block hidden">
                       Hello, Admin
                     </span>
                     <Button
@@ -186,23 +198,25 @@ const Navbar = () => {
             ) : (
               <Button
                 variant="default"
-                className="rounded-full cursor-pointer text-lg font-bold dark:bg-fuchsia-600 dark:hover:bg-fuchsia-700"
+                className="rounded-full cursor-pointer text-lg font-bold dark:bg-fuchsia-600 dark:hover:bg-fuchsia-700 md:block hidden"
                 onClick={() => setOpenLogin(true)}
               >
                 Log in
               </Button>
             )}
 
-            {/* MOBILE MENU ICON */}
-            <div className="md:hidden" onClick={() => setOpen(!open)}>
-              <TiThMenu
-                className={`text-4xl cursor-pointer ${
-                  scrolled || location.pathname !== "/"
-                    ? "text-gray-900 dark:text-white"
-                    : "text-white"
-                }`}
-              />
-            </div>
+            {/* MOBILE MENU ICON — hidden for admin users */}
+            {user?.role !== "ADMIN" && (
+              <div className="md:hidden" onClick={() => setOpen(!open)}>
+                <TiThMenu
+                  className={`text-4xl cursor-pointer ${
+                    scrolled || location.pathname !== "/"
+                      ? "text-gray-900 dark:text-white"
+                      : "text-white"
+                  }`}
+                />
+              </div>
+            )}
           </div>
         </div>
       </nav>
@@ -212,8 +226,9 @@ const Navbar = () => {
         open={open}
         user={user}
         onLogout={handleLogout}
-        onLogin={handleLoginSuccess}
+        onOpenLogin={() => setOpenLogin(true)}
         closeMenu={() => setOpen(false)}
+        theme={theme}
       />
 
       {/* LOGIN POPUP */}
@@ -224,7 +239,11 @@ const Navbar = () => {
       />
 
       {/* PROFILE POPUP */}
-      <Profile open={profileOpen} onClose={() => setProfileOpen(false)} />
+      <Profile
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        onProfileUpdate={(updatedUser) => setUser(updatedUser)}
+      />
     </>
   );
 };

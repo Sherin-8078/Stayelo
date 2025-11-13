@@ -15,6 +15,7 @@ export default function RoomPage() {
   const [rooms, setRooms] = useState(location.state?.rooms || []);
   const [loading, setLoading] = useState(!rooms.length);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("All");
 
   useEffect(() => {
     if (!rooms.length) {
@@ -33,6 +34,13 @@ export default function RoomPage() {
       fetchRooms();
     }
   }, [rooms.length]);
+
+  // Unique room types
+  const roomTypes = ["All", ...new Set(rooms.map((room) => room.type))];
+
+  // Apply filter
+  const filteredRooms =
+    filter === "All" ? rooms : rooms.filter((room) => room.type === filter);
 
   if (loading) {
     return (
@@ -56,7 +64,7 @@ export default function RoomPage() {
     "
     >
       {/* HEADER */}
-      <div className="max-w-6xl mx-auto text-center mb-12">
+      <div className="max-w-6xl mx-auto text-center mb-8">
         <h1
           className="
           text-4xl md:text-5xl font-extrabold 
@@ -72,6 +80,72 @@ export default function RoomPage() {
         </p>
       </div>
 
+      {/* FILTER BAR */}
+      <div
+        className="
+         top-20 z-30 
+          flex justify-center mb-10
+          py-2
+        "
+      >
+        <div
+          className="
+            flex items-center gap-3
+            px-6 py-2 rounded-full
+            border border-cyan-300/50 dark:border-violet-400/50
+            shadow-sm hover:shadow-md transition-all duration-300
+            backdrop-blur-sm
+          "
+        >
+          <label
+            htmlFor="roomType"
+            className="
+              text-sm md:text-base font-semibold tracking-wide
+              text-cyan-700 dark:text-violet-300 uppercase
+            "
+          >
+            Room Type
+          </label>
+
+          <select
+            id="roomType"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="
+              appearance-none bg-transparent
+              text-gray-800 dark:text-gray-100 font-medium
+              border-none focus:ring-0 cursor-pointer
+              px-3 py-1 rounded-md
+              hover:text-cyan-700 dark:hover:text-violet-300
+              focus:shadow-[0_0_0_2px_rgba(34,211,238,0.5)]
+              dark:focus:shadow-[0_0_0_2px_rgba(167,139,250,0.5)]
+              transition-all duration-200
+            "
+          >
+            {roomTypes.map((type) => (
+              <option
+                key={type}
+                value={type}
+                className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100"
+              >
+                {type}
+              </option>
+            ))}
+          </select>
+
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.8}
+            stroke="currentColor"
+            className="w-5 h-5 text-cyan-600 dark:text-violet-400 pointer-events-none"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
+      </div>
+
       {/* ROOMS GRID */}
       <div
         className="
@@ -79,19 +153,18 @@ export default function RoomPage() {
         grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8
       "
       >
-        {rooms.length > 0 ? (
-          rooms.map((room) => (
+        {filteredRooms.length > 0 ? (
+          filteredRooms.map((room) => (
             <div
               key={room._id || room.id}
               className="
-              bg-white/85 backdrop-blur-lg 
-              dark:bg-gray-800/60 
-              border border-gray-200 dark:border-gray-700 
-              rounded-2xl shadow-lg hover:shadow-xl
-              transition-all transform hover:-translate-y-2 
-              overflow-hidden flex flex-col
-            "
-              
+                bg-white/85 backdrop-blur-lg 
+                dark:bg-gray-800/60 
+                border border-gray-200 dark:border-gray-700 
+                rounded-2xl shadow-lg hover:shadow-xl
+                transition-all transform hover:-translate-y-2 
+                overflow-hidden flex flex-col
+              "
             >
               {/* IMAGE */}
               {room.images?.length ? (
@@ -119,11 +192,7 @@ export default function RoomPage() {
                 </p>
 
                 <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 flex-1">
-                  {(room.description || "No description available.").slice(
-                    0,
-                    80
-                  )}
-                  ...
+                  {(room.description || "No description available.").slice(0, 80)}...
                 </p>
 
                 {/* AMENITIES */}
@@ -132,10 +201,10 @@ export default function RoomPage() {
                     <span
                       key={i}
                       className="
-                      text-xs px-2 py-1 rounded-full
-                      bg-cyan-100 text-cyan-800
-                      dark:bg-gray-700 dark:text-gray-200
-                    "
+                        text-xs px-2 py-1 rounded-full
+                        bg-cyan-100 text-cyan-800
+                        dark:bg-gray-700 dark:text-gray-200
+                      "
                     >
                       {a}
                     </span>
@@ -163,14 +232,14 @@ export default function RoomPage() {
                 {/* BUTTON */}
                 <button
                   className={`
-                  mt-5 w-full py-2 text-sm font-semibold rounded-lg
-                  transition-all duration-200
-                  ${
-                    room.available
-                      ? "bg-gradient-to-r from-cyan-500 to-indigo-600 dark:from-violet-500 dark:to-fuchsia-600 text-white hover:opacity-90 hover:scale-[1.02]"
-                      : "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                  }
-                `}
+                    mt-5 w-full py-2 text-sm font-semibold rounded-lg
+                    transition-all duration-200
+                    ${
+                      room.available
+                        ? "bg-gradient-to-r from-cyan-500 to-indigo-600 dark:from-violet-500 dark:to-fuchsia-600 text-white hover:opacity-90 hover:scale-[1.02]"
+                        : "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
+                    }
+                  `}
                   onClick={() =>
                     room.available &&
                     navigate(`/roomdetails/${room._id || room.id}`)

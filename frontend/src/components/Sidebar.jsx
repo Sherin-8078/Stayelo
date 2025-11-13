@@ -54,7 +54,7 @@ export default function Sidebar({
             </h1>
           )}
           <button
-            className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+            className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 md:block hidden "
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             {sidebarOpen ? <ChevronLeft size={24} /> : <ChevronRight size={24} />}
@@ -85,7 +85,6 @@ export default function Sidebar({
         {sidebarOpen && (
           <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex flex-col items-center gap-2">
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Admin</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">admin@hotel.com</p>
             <button
               className="w-full bg-red-500 hover:bg-red-600 text-white py-1.5 rounded-lg transition text-sm flex justify-center items-center gap-2"
               onClick={handleLogout}

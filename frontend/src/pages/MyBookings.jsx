@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // ✅ Import navigation hook
+import Footer from "../components/Footer";
 
 const MyBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate(); // ✅ Initialize navigation
+
+  const fallbackImage =
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=60";
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -16,20 +22,18 @@ const MyBookingsPage = () => {
           return;
         }
 
-        // Assuming your backend stores userId in the JWT
         const payload = JSON.parse(atob(token.split(".")[1]));
         const userId = payload.id;
 
-        const res = await axios.get(`http://localhost:4000/api/bookings/user/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `http://localhost:4000/api/bookings/user/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         setBookings(res.data.bookings || []);
       } catch (err) {
         console.error("Error fetching user bookings:", err.response || err.message);
-        setError(
-          err.response?.data?.message || "Failed to fetch your bookings."
-        );
+        setError(err.response?.data?.message || "Failed to fetch your bookings.");
       } finally {
         setLoading(false);
       }
@@ -50,9 +54,7 @@ const MyBookingsPage = () => {
       );
 
       setBookings((prev) =>
-        prev.map((b) =>
-          b._id === bookingId ? { ...b, status: "Cancelled" } : b
-        )
+        prev.map((b) => (b._id === bookingId ? { ...b, status: "Cancelled" } : b))
       );
 
       alert("Booking cancelled successfully!");
@@ -60,6 +62,11 @@ const MyBookingsPage = () => {
       console.error("Error cancelling booking:", err.response || err.message);
       alert(err.response?.data?.message || "Failed to cancel booking.");
     }
+  };
+
+  // ✅ Navigate to BookingConfirmation with bookingId
+  const handleViewDetails = (bookingId) => {
+    navigate(`/booking-confirmation/${bookingId}`);
   };
 
   if (loading)
@@ -93,38 +100,40 @@ const MyBookingsPage = () => {
               key={booking._id}
               className="flex flex-col sm:flex-row bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-lg transition overflow-hidden"
             >
+              {/* 🖼️ Image Section */}
               <div className="sm:w-1/3 w-full h-48 sm:h-auto">
                 <img
-                  src={booking.room?.image}
-                  alt={booking.room?.name}
+                  src={booking.room?.image || fallbackImage}
+                  alt={booking.room?.name || "Room Image"}
                   className="w-full h-full object-cover"
                 />
               </div>
 
+              {/* 🧾 Details Section */}
               <div className="flex-1 p-5 flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start flex-wrap">
                     <div>
                       <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-                        {booking.room?.name}
+                        {booking.room?.name || "Stayelo Premium Room"}
                       </h2>
                       <p className="text-sm text-gray-500 dark:text-gray-300">
-                        {booking.room?.type}
+                        {booking.room?.type || "Luxury Stay"}
                       </p>
                     </div>
                     <span
                       className={`px-3 py-1 text-xs font-medium rounded-full self-start
-                      ${
-                        booking.status === "Pending"
-                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200"
-                          : booking.status === "Confirmed"
-                          ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200"
-                          : booking.status === "Checked-in"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200"
-                          : booking.status === "Checked-out"
-                          ? "bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200"
-                          : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200"
-                      }`}
+                        ${
+                          booking.status === "Pending"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200"
+                            : booking.status === "CONFIRMED"
+                            ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200"
+                            : booking.status === "Checked-in"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200"
+                            : booking.status === "Checked-out"
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200"
+                            : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200"
+                        }`}
                     >
                       {booking.status}
                     </span>
@@ -151,7 +160,11 @@ const MyBookingsPage = () => {
                 </div>
 
                 <div className="mt-5 flex justify-end space-x-3">
-                  <button className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                  {/* ✅ View Details Button */}
+                  <button
+                    onClick={() => handleViewDetails(booking._id)}
+                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  >
                     View Details
                   </button>
 
@@ -170,6 +183,7 @@ const MyBookingsPage = () => {
           ))}
         </div>
       )}
+      <Footer />
     </div>
   );
 };

@@ -5,8 +5,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../modals/UserData");
 const { sendMail } = require("../utils/mailer");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const cloudinary = require("../utils/cloudinary");
 
 const router = express.Router();
 
@@ -36,26 +35,31 @@ const verifyAdmin = (req, res, next) => {
 };
 
 //
-// 🔹 Multer Storage for Profile Picture
+// 🔹 Multer Memory Storage for Cloudinary
 //
-const profileStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dir = path.join(__dirname, "../uploads/profile_pics");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    cb(null, `${req.user.id}${path.extname(file.originalname)}`);
-  },
-});
-const uploadProfile = multer({ storage: profileStorage });
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// Cloudinary upload helper
+const uploadToCloudinary = (fileBuffer, folder = "stayelo/profile_pics") => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: "image" },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
 
 //
 // ✅ USER AUTHENTICATION
 //
 
-// 🔹 Signup
-router.post("/signup", async (req, res) => {
+// 🔹 Signup (optional profilePic)
+router.post("/signup", upload.single("profilePic"), async (req, res) => {
   try {
     const { email, password, role, name, phone, location } = req.body;
 
@@ -64,15 +68,22 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Email already in use" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({
+
+    const userData = {
       name,
       email,
       password: hashedPassword,
       role: role || "CUSTOMER",
       phone,
       location,
-    });
+    };
 
+    if (req.file) {
+      const profilePicUrl = await uploadToCloudinary(req.file.buffer);
+      userData.profilePic = profilePicUrl;
+    }
+
+    const user = new User(userData);
     await user.save();
 
     // Send Welcome Email
@@ -222,38 +233,32 @@ router.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
-//
 // ✅ Update currently logged-in user profile (fields + optional profile picture)
-//
-router.put(
-  "/update-profile",
-  verifyToken,
-  uploadProfile.single("profilePic"),
-  async (req, res) => {
-    try {
-      const { name, phone, location } = req.body;
-      const updateData = { name, phone, location };
+router.put("/update-profile", verifyToken, upload.single("profilePic"), async (req, res) => {
+  try {
+    const { name, phone, location } = req.body;
+    const updateData = { name, phone, location };
 
-      if (req.file) {
-        updateData.profilePic = `/uploads/profile_pics/${req.file.filename}`;
-      }
-
-      const updatedUser = await User.findByIdAndUpdate(
-        req.user.id,
-        updateData,
-        { new: true, runValidators: true }
-      ).select("-password -resetOtp -resetOtpExpiry");
-
-      if (!updatedUser)
-        return res.status(404).json({ message: "User not found" });
-
-      res.json({ message: "Profile updated successfully", user: updatedUser });
-    } catch (err) {
-      console.error("Update profile error:", err);
-      res.status(500).json({ message: err.message });
+    if (req.file) {
+      const cloudUrl = await uploadToCloudinary(req.file.buffer);
+      updateData.profilePic = cloudUrl;
     }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select("-password -resetOtp -resetOtpExpiry");
+
+    if (!updatedUser)
+      return res.status(404).json({ message: "User not found" });
+
+    res.json({ message: "Profile updated successfully", user: updatedUser });
+  } catch (err) {
+    console.error("Update profile error:", err);
+    res.status(500).json({ message: err.message });
   }
-);
+});
 
 //
 // 🔹 Get user by ID (Admin or Self)

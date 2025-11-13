@@ -5,28 +5,31 @@ import axios from "axios";
 
 const Profile = ({ open, onClose, onProfileUpdate }) => {
   const [flipped, setFlipped] = useState(false);
-  const [profilePic, setProfilePic] = useState(
-    "/default-profile.png"
-  ); // default local image
+  const [profilePic, setProfilePic] = useState("/default-profile.png"); // default image
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [picFile, setPicFile] = useState(null);
-  const [picVersion, setPicVersion] = useState(Date.now()); // For cache-busting
+  const [picVersion, setPicVersion] = useState(Date.now()); // cache-busting
 
   // Fetch user profile
   useEffect(() => {
     const fetchUser = async () => {
+      // Try localStorage first
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setFormData(parsedUser);
+        setProfilePic(parsedUser.profilePic || profilePic);
+        setLoading(false); // Done loading immediately
+        return;
+      }
+
+      // If no local user, fetch from backend
       setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          setFormData(parsedUser);
-          setProfilePic(parsedUser.profilePic || profilePic);
-        }
         setLoading(false);
         return;
       }
@@ -43,28 +46,20 @@ const Profile = ({ open, onClose, onProfileUpdate }) => {
         onProfileUpdate?.(userData);
       } catch (err) {
         console.error("❌ Error fetching profile:", err);
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          setFormData(parsedUser);
-          setProfilePic(parsedUser.profilePic || profilePic);
-        } else {
-          alert(err.response?.data?.message || "Failed to fetch user profile.");
-        }
+        alert(err.response?.data?.message || "Failed to fetch user profile.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();
-  }, [onProfileUpdate]);
+    if (open) fetchUser(); // fetch only when modal opens
+  }, [open, onProfileUpdate]);
 
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setProfilePic(URL.createObjectURL(file)); // Preview
-      setPicFile(file); // Store file for upload
+      setProfilePic(URL.createObjectURL(file)); // preview
+      setPicFile(file); // store file for upload
     }
   };
 
@@ -73,34 +68,21 @@ const Profile = ({ open, onClose, onProfileUpdate }) => {
     if (!token) return alert("You are not logged in!");
 
     try {
-      let picUrl = formData.profilePic;
+      const data = new FormData();
+      data.append("name", formData.name || "");
+      data.append("phone", formData.phone || "");
+      data.append("location", formData.location || "");
+      if (picFile) data.append("profilePic", picFile);
 
-      // Upload profile picture first if selected
-      if (picFile) {
-        const formDataPic = new FormData();
-        formDataPic.append("profilePic", picFile);
-
-        const picRes = await axios.put(
-          "http://localhost:4000/api/auth/update-profile-pic",
-          formDataPic,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        picUrl = picRes.data.user.profilePic;
-        setProfilePic(picUrl);
-        setPicVersion(Date.now()); // Force browser refresh
-      }
-
-      // Update other profile fields
       const res = await axios.put(
         "http://localhost:4000/api/auth/update-profile",
-        { ...formData, profilePic: picUrl },
-        { headers: { Authorization: `Bearer ${token}` } }
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
       const updatedUser = res.data.user;
@@ -109,6 +91,7 @@ const Profile = ({ open, onClose, onProfileUpdate }) => {
       setFlipped(false);
       setPicFile(null);
       setProfilePic(updatedUser.profilePic || profilePic);
+      setPicVersion(Date.now());
       localStorage.setItem("user", JSON.stringify(updatedUser));
       onProfileUpdate?.(updatedUser);
       alert("✅ Profile updated successfully!");
@@ -144,10 +127,7 @@ const Profile = ({ open, onClose, onProfileUpdate }) => {
     );
   if (!user) return null;
 
-  const profilePicSrc =
-    profilePic.startsWith("/uploads")
-      ? `http://localhost:4000${profilePic}?v=${picVersion}`
-      : profilePic; // handle default image
+  const profilePicSrc = profilePic; // Cloudinary URL or default image
 
   return (
     <AnimatePresence>

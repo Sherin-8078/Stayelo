@@ -162,7 +162,7 @@ export default function AboutUs() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-20 mt-10">
 
             <div className="md:pr-10 text-right">
-              <span className="text-cyan-600 dark:text-cyan-400 font-semibold text-lg">2018 – The Idea</span>
+              <span className="text-cyan-600 dark:text-cyan-400 font-semibold text-lg">2025 (Sept) – The Idea</span>
               <p className="text-gray-700 dark:text-gray-300">Stayelo began with a vision to simplify hotel management.</p>
             </div>
 
@@ -171,23 +171,18 @@ export default function AboutUs() {
             <div></div>
 
             <div className="md:pl-10">
-              <span className="text-indigo-600 dark:text-indigo-400 font-semibold text-lg">2020 – First 100 Hotels</span>
-              <p className="text-gray-700 dark:text-gray-300">Our platform partnered with over 100 boutique hotels.</p>
+              <span className="text-indigo-600 dark:text-indigo-400 font-semibold text-lg">2025 (Oct) – Testing and final review done</span>
+              <p className="text-gray-700 dark:text-gray-300">Our platform tested with over 100 hotel rooms.</p>
             </div>
 
+         
             <div className="md:pr-10 text-right">
-              <span className="text-purple-600 dark:text-purple-400 font-semibold text-lg">2022 – Global Expansion</span>
-              <p className="text-gray-700 dark:text-gray-300">We expanded globally with partners in Asia & North America.</p>
+              <span className="text-purple-600 dark:text-purple-400 font-semibold text-lg">2025 (Nov) – Website Launch</span>
+              <p className="text-gray-700 dark:text-gray-300">We launched our website for seamless booking.</p>
             </div>
-
             <div></div>
 
-            <div></div>
-
-            <div className="md:pl-10">
-              <span className="text-pink-600 dark:text-pink-400 font-semibold text-lg">2024 – Traveler App Launch</span>
-              <p className="text-gray-700 dark:text-gray-300">We launched our traveler app for seamless booking.</p>
-            </div>
+         
 
           </div>
         </div>
@@ -220,23 +215,7 @@ export default function AboutUs() {
         </div>
       </section>
 
-      {/* CTA */}
-      <div className="bg-gradient-to-r from-cyan-600 to-indigo-600
-        text-center py-16 rounded-xl max-w-6xl mx-auto shadow-xl px-8 mb-20
-        dark:from-violet-400 dark:to-fuchsia-500 text-white ">
-        
-        <h3 className="font-semibold text-3xl mb-3">Join Our Journey</h3>
-        <p className="text-lg mb-8">We’re always looking for talented individuals to join our team.</p>
-
-        <div className="space-x-5">
-          <button className="bg-white text-indigo-700 px-7 py-3 rounded-lg font-semibold text-lg shadow hover:bg-gray-100 transition">
-            Explore Careers
-          </button>
-          <button className="bg-indigo-700 px-7 py-3 rounded-lg font-semibold text-lg hover:bg-indigo-600 transition">
-            Book a Stay
-          </button>
-        </div>
-      </div>
+    
 
       <Footer />
     </div>

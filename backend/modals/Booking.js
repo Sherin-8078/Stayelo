@@ -14,8 +14,26 @@ const bookingSchema = new mongoose.Schema(
       enum: ["Pending", "Confirmed", "Checked-in", "Checked-out", "Cancelled"],
       default: "Pending",
     },
+    paymentDetails: {
+      orderId: { type: String },
+      paymentId: { type: String },
+      signature: { type: String },
+      paymentStatus: {
+        type: String,
+        enum: ["Pending", "Paid", "Failed"],
+        default: "Pending",
+      },
+    },
   },
   { timestamps: true }
 );
+
+// ✅ Automatically mark booking as confirmed when payment is successful
+bookingSchema.pre("save", function (next) {
+  if (this.paymentDetails?.paymentStatus === "Paid" && this.status === "Pending") {
+    this.status = "Confirmed";
+  }
+  next();
+});
 
 module.exports = mongoose.model("Booking", bookingSchema);

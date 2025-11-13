@@ -36,13 +36,15 @@ const Footer = () => {
 
                 <div>
 
-                     <div className='flex flex-row items-center text-4xl font-bold text-gray-900 gap-2'>
-                        <FaHotel size={30} className='flex gap-2 dark:text-white'/>
-                        <p className='flex flex-row dark:text-white' >Stay<p className='text-cyan-300 dark:text-fuchsia-400'>elo</p></p>
-                        
-                     </div>
+                    <div className='flex flex-row items-center text-4xl font-bold text-gray-900 gap-2'>
+                    <FaHotel size={30} className='flex gap-2 dark:text-white'/>
+                    <p className='flex flex-row dark:text-white'>
+                     Stay
+                    <span className='text-cyan-300 dark:text-fuchsia-400'>elo</span>
+                    </p>
+                    </div>
 
-                    <p className="max-w-[410px] mt-6">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Rerum unde quaerat eveniet cumque accusamus atque qui error quo enim fugiat?</p>
+                    <p className="max-w-[410px] mt-6">Where comfort meets style, every stay feels like home</p>
                     <div className='flex items-center gap-3 mt-4'>
 
                         {/* Instagram */}

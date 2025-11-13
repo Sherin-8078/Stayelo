@@ -84,25 +84,33 @@ router.post(
 // ========================== FILTER ROOMS (PUBLIC) ==========================
 router.get("/search", async (req, res) => {
   try {
-    const { destination, checkIn, checkOut, guests, roomType } = req.query;
+    const { destination, checkIn, checkOut, guests, roomType, priceMin, priceMax } = req.query;
     const query = {};
 
+    // Location filter
     if (destination) {
       query.location = { $regex: destination, $options: "i" };
     }
+
+    // Room type filter
     if (roomType) {
       query.type = roomType;
     }
+
+    // Guests/capacity filter
     const guestsNum = parseInt(guests, 10);
     if (!isNaN(guestsNum)) {
       query.capacity = { $gte: guestsNum };
     }
 
-    // Remove date filtering temporarily
-    // if (checkIn && checkOut) {
-    //   // Date filtering code that may cause error
-    // }
+    // Price filter
+    if (priceMin || priceMax) {
+      query.price = {};
+      if (priceMin) query.price.$gte = Number(priceMin);
+      if (priceMax) query.price.$lte = Number(priceMax);
+    }
 
+    // Availability
     query.available = true;
 
     console.log("Constructed search query:", JSON.stringify(query));
@@ -120,7 +128,10 @@ router.get("/search", async (req, res) => {
     res.json(rooms);
   } catch (err) {
     console.error("❌ Error filtering rooms:", err);
-    res.status(500).json({ message: "Server error during room search", error: err.message });
+    res.status(500).json({
+      message: "Server error during room search",
+      error: err.message,
+    });
   }
 });
 
@@ -217,7 +228,10 @@ router.get("/", authenticateToken, requireRole("ADMIN"), async (req, res) => {
   }
 });
 
-// ========================== PUBLIC ROOM FETCH (LIST) ==========================
+
+
+
+
 router.get("/public", async (req, res) => {
   try {
     const { type, priceMin, priceMax } = req.query;
@@ -228,8 +242,9 @@ router.get("/public", async (req, res) => {
     if (priceMin) filter.price.$gte = Number(priceMin);
     if (priceMax) filter.price.$lte = Number(priceMax);
 
+    // Include capacity field here
     const rooms = await Room.find(filter).select(
-      "type price available location description amenities rating images"
+      "type price available location description amenities rating images capacity"
     );
 
     const formattedRooms = rooms.map((r) => ({
@@ -365,6 +380,16 @@ router.get(
   }
 );
 
+// ========================== TOTAL ROOMS COUNT (ADMIN) ==========================
+router.get("/count", authenticateToken, requireRole("ADMIN"), async (req, res) => {
+  try {
+    const totalRooms = await Room.countDocuments();
+    res.json({ totalRooms });
+  } catch (err) {
+    console.error("❌ Error fetching total rooms:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 

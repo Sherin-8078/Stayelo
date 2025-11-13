@@ -10,13 +10,13 @@ const roomSchema = new mongoose.Schema(
     amenities: [{ type: String }],
     rating: { type: Number, default: 0 },
     images: [{ type: String }],
+    capacity: { type: Number, default: 2 }, // ✅ added for guest filtering
     bookings: [
-  {
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true }
-  }
-]
-
+      {
+        startDate: { type: Date, required: true },
+        endDate: { type: Date, required: true },
+      },
+    ],
   },
   { timestamps: true }
 );

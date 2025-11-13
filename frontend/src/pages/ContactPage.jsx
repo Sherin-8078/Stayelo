@@ -1,4 +1,7 @@
-import React from "react";
+
+
+
+import React, { useState, useEffect } from "react";
 import {
   PhoneIcon,
   EnvelopeIcon as MailIcon,
@@ -7,15 +10,61 @@ import {
 } from "@heroicons/react/24/solid";
 import { FaWhatsapp } from "react-icons/fa";
 import Footer from "../components/Footer";
+import { io } from "socket.io-client";
+
+// Use transports: ['websocket'] to avoid CORS polling issues
+const socket = io("http://localhost:4000", {
+  transports: ["websocket"],
+  withCredentials: true,
+});
 
 export default function ContactPage() {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+
   const handleSubmit = (e) => {
     e.preventDefault();
     alert("Thank you for reaching out to StayElo! We'll respond soon.");
   };
 
+  useEffect(() => {
+    // Load chat history from server
+    socket.on("chat_history", (history) => {
+      setMessages(history);
+    });
+
+    // Listen for new messages
+    socket.on("receive_message", (message) => {
+      setMessages((prev) => [...prev, message]);
+    });
+
+    return () => {
+      socket.off("receive_message");
+      socket.off("chat_history");
+    };
+  }, []);
+
+  const sendMessage = (e) => {
+  e.preventDefault();
+  if (!newMessage.trim()) return;
+
+  const messageData = {
+    text: newMessage.trim(),
+    sender: "User",
+    timestamp: new Date(), // send actual Date object for backend
+  };
+
+  // Emit message to server
+  socket.emit("send_message", messageData);
+
+  // DON'T update local messages here, server will emit it back
+  setNewMessage("");
+};
+
+
   return (
-    <div className="
+    <div
+      className="
       min-h-screen pt-24 px-6 md:px-12
       bg-gradient-to-b from-cyan-50 via-white to-cyan-100
       dark:bg-gradient-to-b dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 
@@ -24,7 +73,8 @@ export default function ContactPage() {
     >
       {/* HEADER */}
       <div className="max-w-6xl mx-auto text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold
+        <h1
+          className="text-4xl md:text-5xl font-extrabold
           bg-gradient-to-r from-cyan-500 to-indigo-600
           dark:from-violet-400 dark:to-fuchsia-500
           bg-clip-text text-transparent p-5"
@@ -32,19 +82,21 @@ export default function ContactPage() {
           Contact StayElo
         </h1>
         <p className="text-gray-600 dark:text-gray-300 mt-2">
-          We’re here to make your stay as smooth as possible — reach out for any assistance.
+          We’re here to make your stay as smooth as possible — reach out for any
+          assistance.
         </p>
       </div>
 
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
-
         {/* FORM */}
-        <div className="flex-1
+        <div
+          className="flex-1
           bg-white/90 backdrop-blur-md dark:bg-gray-800/60
           border border-gray-200 dark:border-gray-700
           rounded-2xl shadow-lg p-8 transition-all"
         >
-          <h2 className="text-2xl font-semibold mb-6
+          <h2
+            className="text-2xl font-semibold mb-6
             bg-gradient-to-r from-cyan-500 to-indigo-600
             dark:from-violet-400 dark:to-fuchsia-500
             bg-clip-text text-transparent"
@@ -53,7 +105,6 @@ export default function ContactPage() {
           </h2>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
             {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
@@ -130,11 +181,53 @@ export default function ContactPage() {
               Send Message
             </button>
           </form>
+
+          {/* --- Real-time Chat Box --- */}
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold mb-2
+              bg-gradient-to-r from-cyan-500 to-indigo-600
+              dark:from-violet-400 dark:to-fuchsia-500
+              bg-clip-text text-transparent"
+            >
+              Live Chat
+            </h3>
+            <div className="h-64 overflow-y-auto mb-3 border border-gray-300 dark:border-gray-700 p-3 rounded-lg space-y-2">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`p-2 rounded-lg ${
+                    msg.sender === "User"
+                      ? "bg-cyan-100 dark:bg-violet-700 text-gray-900 dark:text-gray-100 ml-auto max-w-[75%]"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 mr-auto max-w-[75%]"
+                  }`}
+                >
+                  <span className="block text-sm">{msg.text}</span>
+                  <span className="block text-xs text-gray-500 dark:text-gray-400 text-right">
+                    {msg.timestamp}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <form onSubmit={sendMessage} className="flex gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-violet-400"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-cyan-500 dark:bg-violet-500 text-white rounded-lg hover:opacity-90"
+              >
+                Send
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* INFO CARDS */}
         <div className="flex-1 flex flex-col gap-6">
-
           {/* Get in Touch */}
           <div className="bg-white/90 backdrop-blur-md dark:bg-gray-800/60
             border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow-lg transition-all"
@@ -220,7 +313,6 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
       <Footer />
