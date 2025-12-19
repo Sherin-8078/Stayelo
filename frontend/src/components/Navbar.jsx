@@ -6,7 +6,7 @@ import ResponsiveMenu from "./ResponsiveMenu";
 import Login from "./Login";
 import Profile from "./Profile";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, User  } from "lucide-react";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -77,10 +77,7 @@ const Navbar = () => {
   ];
 
   // Default/fallback profile picture
-  const profilePicSrc =
-    user?.profilePic ||
-    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
-
+  
   return (
     <>
       {/* NAVBAR */}
@@ -169,15 +166,22 @@ const Navbar = () => {
                       Hello, {user.name}
                     </span>
                     <div
-                      className="relative ml-3 cursor-pointer"
-                      onClick={() => setProfileOpen(true)}
-                    >
-                      <img
-                        alt="profile"
-                        src={profilePicSrc}
-                        className="h-9 w-9 rounded-full border-2 border-cyan-500 dark:border-fuchsia-400 hover:scale-105 transition-transform"
-                      />
-                    </div>
+                 className="relative ml-3 cursor-pointer"
+                  onClick={() => setProfileOpen(true)}
+                  >
+                   {user?.profilePic ? (
+                  <img
+                   alt="profile"
+                   src={user.profilePic}
+                   className="h-9 w-9 rounded-full border-2 border-cyan-500 dark:border-fuchsia-400 hover:scale-105 transition-transform"
+                   />
+                   ) : (
+                   <div className="h-9 w-9 rounded-full border-2 border-cyan-500 dark:border-fuchsia-400 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                   <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                   </div>
+                    )}
+                  </div>
+
                   </>
                 )}
 

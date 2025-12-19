@@ -64,8 +64,19 @@ const Hero = () => {
   };
 
   return (
-    <div className="flex flex-col items-start justify-center px-6 md:px-16 lg:px-24 xl:px-32 text-white bg-[url('/herobg.jpg')] bg-cover bg-no-repeat h-screen">
-      <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold">
+<div
+  className="
+    flex flex-col items-start
+    justify-start md:justify-center
+    pt-24 md:pt-0
+    px-6 md:px-16 lg:px-24 xl:px-32
+    text-white
+    bg-[url('/herobg.jpg')]
+    bg-cover bg-no-repeat
+    min-h-screen
+  "
+>
+      <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold ">
         Find Your{" "}
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-600
                           dark:from-violet-400 dark:to-fuchsia-500">
